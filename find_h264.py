@@ -109,7 +109,7 @@ for i in l_fix:
 
     while True:
         chatter = p.stderr.read(1024)
-        print("OUTPUT>>> " + chatter.rstrip()) 
+        print(chatter.rstrip()) 
     p.kill()
     count +=1
 
