@@ -2,7 +2,7 @@
 
 need be installed ffmpeg
 
-Python skript for 
+Python script for 
 - converting h264 to h265 with ffmpeg
 - cut any [] and () 
 - convert directory
