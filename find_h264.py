@@ -22,6 +22,8 @@ def cutter(item_c):
             item_c = item_c[0:_num]+item_c[_num+1:len(item_c)]
         while item_c.find(' .') != -1:
             item_c = item_c[0:item_c.find(' .')]+item_c[item_c.find('_')-3:len(item_c)]
+        if item_c[0] == ' ':
+            item_c = item_c[1:len(item_c)]
         l_fix.append(item_c)
         print item_c
         number = ''
@@ -36,7 +38,6 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 dir_path = dir_path[:dir_path.find('/to_aru_anime_converter')]
 dir_path += '/Download_mount/' + f_dir
 
-#Psycho-Pass Sinners of the System Case.1
 
 l_root = []
 l_fix = []
@@ -96,19 +97,19 @@ for i in l_fix:
             full_root[count][0:-4]+'.ass',
             str(l_root[count]+'/'+i[0:-4]+'.ass')
         ])
-
-    output = subprocess.check_output([
+    process = "ffmpeg -i '" + full_root[count] + "' -c:v libx265 -x265-params crf=25 -c:a copy '" + str(l_root[count]+'/'+i) + "'"
+    p = subprocess.Popen([
         "ffmpeg",
         "-i", full_root[count],
         "-c:v", "libx265",
         "-x265-params", "crf=25",
         "-c:a", "copy", 
-        str(l_root[count]+'/'+i)  
-    ])
-#    output = subprocess.check_output([
-#        "cp",
-#        full_root[count][0:-3]
-#
-#        ])
+        str(l_root[count]+'/'+i)],
+        stderr=subprocess.PIPE)
+
+    while True:
+        chatter = p.stderr.read(1024)
+        print("OUTPUT>>> " + chatter.rstrip()) 
+    p.kill()
     count +=1
 
