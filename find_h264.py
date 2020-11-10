@@ -1,38 +1,43 @@
 #!/usr/bin/python
 import sys, subprocess, json, os
-import ffmpeg
+import argparse
 
 def cutter(item_c):
     while item_c.find('[') != -1:
         start = item_c.find('[')
         end = item_c.find(']')
         number = ''
-#        print item_c[start:end+1]
-#        print item_c
-#        print item_c[0:start]+item_c[end+1:len(item_c)]
         if end-start <= 3:
             number = item_c[start+1:end]
-            print number
         item_c = item_c[0:start]+item_c[end+1:len(item_c)]
         if item_c.find('[') == -1:
             while item_c.find('(') != -1:
                 start = item_c.find('(')
                 end = item_c.find(')')
                 item_c = item_c[0:start]+item_c[end+1:len(item_c)]
-#                   if item_c.find('(') == -1:
         if number != '':
             item_c = item_c[0:-4]+' '+number+item_c[-4:len(item_c)]
         while item_c.find('_') != -1:
             _num = item_c.find('_')
             item_c = item_c[0:_num]+item_c[_num+1:len(item_c)]
-#       print item_c
         while item_c.find(' .') != -1:
             item_c = item_c[0:item_c.find(' .')]+item_c[item_c.find('_')-3:len(item_c)]
         l_fix.append(item_c)
         print item_c
         number = ''
 
-dir_path = os.path.dirname(os.path.realpath(__file__))+'/Download_mount/Psycho-Pass Sinners of the System Case.1'
+parser = argparse.ArgumentParser(description='--dir')
+parser.add_argument("--dir", help="Use --dir <dir_after_DIR>for find change and conver in include dir")
+args = parser.parse_args()
+f_dir = args.dir
+print(f_dir)
+
+dir_path = os.path.dirname(os.path.realpath(__file__))
+dir_path = dir_path[:dir_path.find('/to_aru_anime_converter')]
+dir_path += '/Download_mount/' + f_dir
+
+#Psycho-Pass Sinners of the System Case.1
+
 l_root = []
 l_fix = []
 full_root = []
