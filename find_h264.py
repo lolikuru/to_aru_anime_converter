@@ -106,10 +106,10 @@ for i in l_fix:
         "-c:a", "copy", 
         str(l_root[count]+'/'+i)],
         stderr=subprocess.PIPE)
-
-    while True:
+    chatter = p.stderr.read(1024)
+    while chatter.rstrip() != '':
         chatter = p.stderr.read(1024)
-        print(chatter.rstrip()) 
-    p.kill()
+        out = chatter.rstrip()
+        print(out)
     count +=1
 
