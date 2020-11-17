@@ -25,9 +25,10 @@ def cutter(item_c):
             item_c = item_c[0:item_c.find(' .')]+item_c[item_c.find('_')-3:len(item_c)]
         if item_c[0] == ' ':
             item_c = item_c[1:len(item_c)]
-        l_fix.append(item_c)
         print item_c
         number = ''
+    l_fix.append(item_c)
+
 
 parser = argparse.ArgumentParser(description='--dir')
 parser.add_argument("--dir", help="Use --dir <dir_after_DIR>for find change and conver in include dir")
@@ -69,12 +70,13 @@ for i in l_fix:
 #    print full_root[count]
 #    print i
     print 'cp ' + full_root[count][0:-4] + '.ass ' + l_root[count]+'/'+i[0:-4]+'.ass'
-    if os.path.exists(full_root[count][0:-4] + '.ass') & not os.path.exists(l_root[count]+'/'+i[0:-4]+'.ass'): 
-        output = subprocess.check_output([
-            "cp",
-            full_root[count][0:-4]+'.ass',
-            l_root[count]+'/'+i[0:-4]+'.ass'
-        ])
+    if os.path.exists(full_root[count][0:-4] + '.ass'):
+        if not os.path.exists(l_root[count]+'/'+i[0:-4]+'.ass'): 
+            output = subprocess.check_output([
+                "cp",
+                full_root[count][0:-4]+'.ass',
+                l_root[count]+'/'+i[0:-4]+'.ass'
+            ])
     
     if not (os.path.exists(str(l_root[count]+'/'+i))):
         process = "ffmpeg -i '" + full_root[count] + "' -c:v libx265 -x265-params crf=25 -c:a copy '" + str(l_root[count]+'/'+i) + "'"
