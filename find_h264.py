@@ -85,7 +85,7 @@ for i in l_fix:
             "-i", full_root[count],
             "-c:v", "libx265",
             "-x265-params", "crf=25",
-            "-c:a", "copy", 
+            "-codec:a", "aac", 
             str(l_root[count]+'/'+i)],
             stderr=subprocess.PIPE)
         chatter = p.stderr.read(1024)
