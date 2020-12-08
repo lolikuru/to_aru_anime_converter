@@ -2,7 +2,20 @@
 import sys, subprocess, json, os
 import argparse
 
+def frame_count(input_root):
+    frame_count = subprocess.check_output([
+        "ffprobe",
+        "-v", "error",
+        "-select_streams", "v:0",
+        "-show_entries", "stream=nb_frames",
+        "-of", "default=noprint_wrappers=1:nokey=1",
+        input_root
+    ])
+    return frame_count
+
+
 def cutter(item_c):
+    item_verified = item_c
     print item_c
     while item_c.find('[') != -1:
         start = item_c.find('[')
@@ -25,20 +38,40 @@ def cutter(item_c):
             item_c = item_c[0:item_c.find(' .')]+item_c[item_c.find('_')-3:len(item_c)]
         if item_c[0] == ' ':
             item_c = item_c[1:len(item_c)]
-        print item_c
+#        print item_c
         number = ''
+    if item_c == item_verified:
+        item_c = item_c[0:item_c.find('.')] + " HEVC" + item_c[-4:len(item_c)]
+    print item_c
     l_fix.append(item_c)
 
 
 parser = argparse.ArgumentParser(description='--dir')
-parser.add_argument("--dir", help="Use --dir <dir_after_DIR>for find change and conver in include dir")
+parser.add_argument("--dir", action="store", dest="dir", 
+        help="Use --dir <dir_after_DIR>for find change and conver in include dir")
+parser.add_argument("--delete_origin", action="store_true", dest="delete_origin",
+        help="Delete origin file after converting and rename")
+parser.add_argument("--only_check", action="store_true", dest="only_check",
+        help="Check files only w/o deletion and convertaion")
+parser.add_argument("--v", action="store_true", dest="verbose",
+        help="Verbose convertation")
 args = parser.parse_args()
-f_dir = args.dir
-print(f_dir)
+if args.dir:
+    f_dir = "/" + args.dir
+else: f_dir = '' 
+
+#print(f_dir)
+if args.delete_origin:
+    print 'Original files will be deleted after converting'
+else: 
+    print 'Converting w/o origins deleting'
+
+if args.only_check:
+    print 'Only check'
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 dir_path = dir_path[:dir_path.find('/to_aru_anime_converter')]
-dir_path += '/Download_mount/' + f_dir
+dir_path += '/Download_mount' + f_dir
 
 
 l_root = []
@@ -61,37 +94,63 @@ for root, dirs, files in os.walk(dir_path):
                 "-of", "default=noprint_wrappers=1:nokey=1",
                 check
             ])[:-1]
-            if  output == 'h264':
+            if  output in ['h264', 'mpeg4']:
                 full_root.append(str(root+'/'+str(file)))
                 l_root.append(str(root))
                 cutter(str(file))
 count = 0
 for i in l_fix:
-#    print full_root[count]
-#    print i
-    print 'cp ' + full_root[count][0:-4] + '.ass ' + l_root[count]+'/'+i[0:-4]+'.ass'
-    if os.path.exists(full_root[count][0:-4] + '.ass'):
+    if os.path.exists(full_root[count][-1:-4] + '.ass'):
         if not os.path.exists(l_root[count]+'/'+i[0:-4]+'.ass'): 
+            print 'cp ' + full_root[count][0:-4] + '.ass ' + l_root[count]+'/'+i[0:-4]+'.ass'
             output = subprocess.check_output([
                 "cp",
                 full_root[count][0:-4]+'.ass',
                 l_root[count]+'/'+i[0:-4]+'.ass'
             ])
+            if args.delete_origin & args.only_check != True:
+                output = subprocess.check_output([
+                    "rm",
+                    full_root[count][0:-4]+'.ass'
+                ])
     
     if not (os.path.exists(str(l_root[count]+'/'+i))):
         process = "ffmpeg -i '" + full_root[count] + "' -c:v libx265 -x265-params crf=25 -c:a copy '" + str(l_root[count]+'/'+i) + "'"
-        p = subprocess.Popen([
-            "ffmpeg",
-            "-i", full_root[count],
-            "-c:v", "libx265",
-            "-x265-params", "crf=25",
-            "-codec:a", "aac", 
-            str(l_root[count]+'/'+i)],
-            stderr=subprocess.PIPE)
-        chatter = p.stderr.read(1024)
-        while chatter.rstrip() != '':
-            chatter = p.stderr.read(1024)
-            out = chatter.rstrip()
-            print(out)
+        f_count = frame_count(full_root[count])
+        print(f_count)
+        if not args.only_check:
+            p = subprocess.Popen([
+                "ffmpeg",
+                "-i", full_root[count],
+                "-c:v", "libx265",
+                "-x265-params", "crf=25",
+                "-codec:a", "aac", 
+                str(l_root[count]+'/'+i)],
+                stderr=subprocess.PIPE)
+            if args.verbose:
+                chatter = p.stderr.read(1024)
+                while chatter.rstrip() != '':
+                    out = chatter.rstrip()
+                    chatter = p.stderr.read(1024)
+                    print(out)
+            else:
+                chatter = p.stderr.read(32)
+                while chatter.rstrip() != '':
+                    chatter = p.stderr.read(32)
+#                    print(chatter)
+                    out = chatter[chatter.find('frame='):chatter.find('fps=')]
+                    print(chatter.find('frame='))
+                    print(chatter.find('fps='))
+#                   out = out.replace(' ', '')
+                    print("FRAME="+out)
+                    #print(int(out)/int(f_count)*100)
+
+    if (frame_count(full_root[count]) == l_root[count]) & args.delete_origin:
+        print 'DANGER, ORIGINALS DELETING'
+#        output = subprocess.check_output([
+#            "rm",
+#            full_root[count]
+#    ])
     count +=1
+
 
