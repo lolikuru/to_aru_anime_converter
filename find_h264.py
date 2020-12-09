@@ -4,14 +4,13 @@ import argparse
 
 def frame_count(input_root):
     frame_count = subprocess.check_output([
-        "ffprobe",
-        "-v", "error",
-        "-select_streams", "v:0",
-        "-show_entries", "stream=nb_frames",
-        "-of", "default=noprint_wrappers=1:nokey=1",
+        "mediainfo",
+        "--fullscan", 
         input_root
     ])
-    return frame_count[:-1]
+    frame_count = frame_count[frame_count.find('Frame count'):frame_count.find('\n', frame_count.find('Frame count'))]
+    frame_count = frame_count[frame_count.find(':')+2:]
+    return frame_count
 
 
 def cutter(item_c):
@@ -96,6 +95,7 @@ for root, dirs, files in os.walk(dir_path):
             ])[:-1]
             if  output in ['h264', 'mpeg4']:
                 full_root.append(str(root+'/'+str(file)))
+               # print frame_count(str(root+'/'+str(file)))
                 l_root.append(str(root))
                 cutter(str(file))
 count = 0
@@ -116,7 +116,7 @@ for i in l_fix:
 
     if (os.path.exists(str(l_root[count]+'/'+i))):
         if frame_count(full_root[count]) != frame_count(l_root[count]+'/'+i):
-            print ("Frames is not correct: "+ frame_count(full_root[count])[:-1] + " != "+ frame_count(l_root[count]+'/'+i))
+            print ("Frames is not correct: "+ frame_count(full_root[count]) + " != "+ frame_count(l_root[count]+'/'+i))
             output = subprocess.check_output([
                 "rm",
                 str(l_root[count]+'/'+i)
@@ -127,7 +127,7 @@ for i in l_fix:
     if not (os.path.exists(str(l_root[count]+'/'+i))):
         process = "ffmpeg -i '" + full_root[count] + "' -c:v libx265 -x265-params crf=25 -c:a copy '" + str(l_root[count]+'/'+i) + "'"
         f_count = frame_count(full_root[count])
-        print(int(f_count))
+        print(f_count)
         if not args.only_check:
             p = subprocess.Popen([
                 "ffmpeg",
@@ -151,19 +151,21 @@ for i in l_fix:
 #                    print(chatter)
                     if chatter.find('frame=')!=-1 & chatter.find('fps=')!=-1:
                         out = chatter[chatter.find('frame=')+6:chatter.find('fps=')]
+#                       print ('\'' + out + '\'')
+                        out = out.replace(' ', '')
                         if out != '':
-                            out = out.replace(' ', '')
-                            if out_r <= int(out):
-                                out_r = int(out)
-                                n = float(out_r)/float(f_count)
+                            if int(out_r) <= int(out):
+                                out_r = out
+                                n = float(out_r)/int(f_count)
                                 print("{:.1%}".format(n) + " Frames compiled:" + out)
-    if frame_count(full_root[count]) == frame_count(l_root[count]+'/'+i):
-        if args.delete_origin:
-            print 'DANGER, ORIGINALS DELETING'
-            output = subprocess.check_output([
-                "rm",
-                full_root[count]
-            ])
+    if (os.path.exists(str(l_root[count]+'/'+i))):
+        if frame_count(full_root[count]) == frame_count(l_root[count]+'/'+i):
+            if args.delete_origin:
+                print 'DANGER, ORIGINALS DELETING'
+            #output = subprocess.check_output([
+            #    "rm",
+            #    full_root[count]
+     #       ])
     count +=1
 
 

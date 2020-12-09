@@ -3,6 +3,7 @@
 need be installed:
 - ffmpeg
 - python 2.7
+- mediainfo(for frame counter)
 
 Python script for 
 - converting h264 to h265 with ffmpeg
