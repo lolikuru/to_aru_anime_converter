@@ -11,7 +11,7 @@ def frame_count(input_root):
         "-of", "default=noprint_wrappers=1:nokey=1",
         input_root
     ])
-    return frame_count
+    return frame_count[:-1]
 
 
 def cutter(item_c):
@@ -113,11 +113,19 @@ for i in l_fix:
                     "rm",
                     full_root[count][0:-4]+'.ass'
                 ])
-    
+
+    if (os.path.exists(str(l_root[count]+'/'+i))):
+        if frame_count(full_root[count]) != frame_count(l_root[count]+'/'+i):
+            print ("Frames is not correct: "+ frame_count(full_root[count])[:-1] + " != "+ frame_count(l_root[count]+'/'+i))
+            output = subprocess.check_output([
+                "rm",
+                str(l_root[count]+'/'+i)
+            ])
+        else: print ("Video already converted")
     if not (os.path.exists(str(l_root[count]+'/'+i))):
         process = "ffmpeg -i '" + full_root[count] + "' -c:v libx265 -x265-params crf=25 -c:a copy '" + str(l_root[count]+'/'+i) + "'"
         f_count = frame_count(full_root[count])
-        print(f_count)
+        print(int(f_count))
         if not args.only_check:
             p = subprocess.Popen([
                 "ffmpeg",
@@ -134,18 +142,21 @@ for i in l_fix:
                     chatter = p.stderr.read(1024)
                     print(out)
             else:
-                chatter = p.stderr.read(32)
+                out_r = 0
+                chatter = p.stderr.read(24)
                 while chatter.rstrip() != '':
-                    chatter = p.stderr.read(32)
+                    chatter = p.stderr.read(24)
 #                    print(chatter)
-                    out = chatter[chatter.find('frame='):chatter.find('fps=')]
-                    print(chatter.find('frame='))
-                    print(chatter.find('fps='))
-#                   out = out.replace(' ', '')
-                    print("FRAME="+out)
-                    #print(int(out)/int(f_count)*100)
+                    if chatter.find('frame=')!=-1 & chatter.find('fps=')!=-1:
+                        out = chatter[chatter.find('frame=')+6:chatter.find('fps=')]
+                        if out != '':
+                            out = out.replace(' ', '')
+                            if out_r <= int(out):
+                                out_r = int(out)
+                                n = float(out_r)/float(f_count)
+                                print("{:.1%}".format(n) + " Frames compiled:" + out)
 
-    if (frame_count(full_root[count]) == l_root[count]) & args.delete_origin:
+    if (frame_count(full_root[count]) == l_root[count]+'/'+i) & args.delete_origin:
         print 'DANGER, ORIGINALS DELETING'
 #        output = subprocess.check_output([
 #            "rm",
