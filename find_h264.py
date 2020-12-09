@@ -121,7 +121,9 @@ for i in l_fix:
                 "rm",
                 str(l_root[count]+'/'+i)
             ])
-        else: print ("Video already converted")
+        else: 
+            print ("Video already converted")
+
     if not (os.path.exists(str(l_root[count]+'/'+i))):
         process = "ffmpeg -i '" + full_root[count] + "' -c:v libx265 -x265-params crf=25 -c:a copy '" + str(l_root[count]+'/'+i) + "'"
         f_count = frame_count(full_root[count])
@@ -155,13 +157,13 @@ for i in l_fix:
                                 out_r = int(out)
                                 n = float(out_r)/float(f_count)
                                 print("{:.1%}".format(n) + " Frames compiled:" + out)
-
-    if (frame_count(full_root[count]) == l_root[count]+'/'+i) & args.delete_origin:
-        print 'DANGER, ORIGINALS DELETING'
-#        output = subprocess.check_output([
-#            "rm",
-#            full_root[count]
-#    ])
+    if frame_count(full_root[count]) == frame_count(l_root[count]+'/'+i):
+        if args.delete_origin:
+            print 'DANGER, ORIGINALS DELETING'
+            output = subprocess.check_output([
+                "rm",
+                full_root[count]
+            ])
     count +=1
 
 
