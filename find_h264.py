@@ -1,17 +1,24 @@
 #!/usr/bin/python
 import sys, subprocess, json, os
-import argparse
+import argparse, time
 
 def frame_count(input_root):
-    frame_count = subprocess.check_output([
-        "mediainfo",
-        "--fullscan", 
-        input_root
-    ])
-    frame_count = frame_count[frame_count.find('Frame count'):frame_count.find('\n', frame_count.find('Frame count'))]
-    frame_count = frame_count[frame_count.find(':')+2:]
-    return frame_count
-
+    cmd ="ffmpeg -i \'" + input_root + "\' -vcodec copy -acodec copy -f null /dev/null 2>&1 | grep -Eo 'frame= *[0-9]+ * | tail -1'"
+    frame_count = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=None, shell=True)
+    
+#    print fframe_count.communicate()[0]
+    out = frame_count.communicate()[0]
+    out = out.split('\n')[-2]
+    out = out.replace(' ', '')
+    out = out[6:]
+    time.sleep(2)
+    #print("\'"+out+"\'")
+#    frame_count = frame_count[frame_count.find('Frame count'):frame_count.find('\n', frame_count.find('Frame count'))]
+#    frame_count = frame_count[frame_count.find(':')+2:]  
+    return out
 
 def cutter(item_c):
     item_verified = item_c
@@ -83,51 +90,60 @@ print "Move find dir:"+dir_path
 for root, dirs, files in os.walk(dir_path): 
     for file in files:   
         if file.endswith('.mkv') | file.endswith('.mp4') | file.endswith('.avi'): 
-            check = (str(root+'/'+str(file)))
-#           print check
-            output = subprocess.check_output([
-                "ffprobe",
-                "-v", "error",
-                "-select_streams", "v:0",
-                "-show_entries", "stream=codec_name", 
-                "-of", "default=noprint_wrappers=1:nokey=1",
-                check
-            ])[:-1]
-            if  output in ['h264', 'mpeg4']:
-                full_root.append(str(root+'/'+str(file)))
-               # print frame_count(str(root+'/'+str(file)))
-                l_root.append(str(root))
-                cutter(str(file))
+            if str(file).find('HEVC') == -1:
+                check = (str(root+'/'+str(file)))
+                output = subprocess.check_output([
+                    "ffprobe",
+                    "-v", "error",
+                    "-select_streams", "v:0",
+                    "-show_entries", "stream=codec_name", 
+                    "-of", "default=noprint_wrappers=1:nokey=1",
+                    check
+                ])[:-1]
+                if  output in ['h264', 'mpeg4']:
+                    full_root.append(str(root+'/'+str(file)))
+                    l_root.append(str(root))
+                    cutter(str(file))
 count = 0
 for i in l_fix:
-    if os.path.exists(full_root[count][-1:-4] + '.ass'):
+    print i
+    print(full_root[count][0:-4] + '.ass ' + str(os.path.exists(full_root[count][0:-4] + '.ass')))
+    print(l_root[count]+'/'+i[0:-4]+'.ass ' + str(os.path.exists(l_root[count]+'/'+i[0:-4]+'.ass')))
+    if os.path.exists(full_root[count][0:-4] + '.ass'):
         if not os.path.exists(l_root[count]+'/'+i[0:-4]+'.ass'): 
             print 'cp ' + full_root[count][0:-4] + '.ass ' + l_root[count]+'/'+i[0:-4]+'.ass'
-            output = subprocess.check_output([
-                "cp",
-                full_root[count][0:-4]+'.ass',
-                l_root[count]+'/'+i[0:-4]+'.ass'
-            ])
-            if args.delete_origin & args.only_check != True:
+            if not args.only_check:
                 output = subprocess.check_output([
-                    "rm",
-                    full_root[count][0:-4]+'.ass'
+                    "cp",
+                    full_root[count][0:-4]+'.ass',
+                    l_root[count]+'/'+i[0:-4]+'.ass'
                 ])
+                if args.delete_origin:
+                    output = subprocess.check_output([
+                        "rm",
+                        full_root[count][0:-4]+'.ass'
+                    ])
 
-    if (os.path.exists(str(l_root[count]+'/'+i))):
+    if os.path.exists(str(l_root[count]+'/'+i)):
         if frame_count(full_root[count]) != frame_count(l_root[count]+'/'+i):
-            print ("Frames is not correct: "+ frame_count(full_root[count]) + " != "+ frame_count(l_root[count]+'/'+i))
+            print ("Frames is not correct for "+i)
+            print ("Input file frames:" + frame_count(full_root[count]))
+            print ("Output file frames:"+ frame_count(l_root[count]+'/'+i))
             output = subprocess.check_output([
                 "rm",
+                "-v",
                 str(l_root[count]+'/'+i)
             ])
+            time.sleep(2)
+            print ("Unconverted file deleted " + i)
         else: 
-            print ("Video already converted")
+            print ("Video already converted " + i)
+            print ("Input file frames:" + frame_count(full_root[count]))
+            print ("Output file frames:"+ frame_count(l_root[count]+'/'+i))
 
     if not (os.path.exists(str(l_root[count]+'/'+i))):
         process = "ffmpeg -i '" + full_root[count] + "' -c:v libx265 -x265-params crf=25 -c:a copy '" + str(l_root[count]+'/'+i) + "'"
         f_count = frame_count(full_root[count])
-        print(f_count)
         if not args.only_check:
             p = subprocess.Popen([
                 "ffmpeg",
@@ -157,15 +173,15 @@ for i in l_fix:
                             if int(out_r) <= int(out):
                                 out_r = out
                                 n = float(out_r)/int(f_count)
-                                print("{:.1%}".format(n) + " Frames compiled:" + out)
+                                print("Output Name:" + i + " {:.2%}".format(n) + " Frames compiled:" + out)
     if (os.path.exists(str(l_root[count]+'/'+i))):
         if frame_count(full_root[count]) == frame_count(l_root[count]+'/'+i):
             if args.delete_origin:
                 print 'DANGER, ORIGINALS DELETING'
-            #output = subprocess.check_output([
-            #    "rm",
-            #    full_root[count]
-     #       ])
+                output = subprocess.check_output([
+                   "rm",
+                    full_root[count]
+                ])
     count +=1
 
 

@@ -3,7 +3,6 @@
 need be installed:
 - ffmpeg
 - python 2.7
-- mediainfo(for frame counter)
 
 Python script for 
 - converting h264 to h265 with ffmpeg
@@ -12,6 +11,7 @@ Python script for
 - copy ass files
 - rename ass files
 - change output for using in jenkins
+- use full or half output log format
 - find files in path '/Download_mount/' for default
 
 import sys, subprocess, json, os, argparse
