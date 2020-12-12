@@ -118,17 +118,19 @@ for i in l_fix:
                     full_root[count][0:-4]+'.ass',
                     l_root[count]+'/'+i[0:-4]+'.ass'
                 ])
-                if args.delete_origin:
-                    output = subprocess.check_output([
-                        "rm",
-                        full_root[count][0:-4]+'.ass'
-                    ])
+        if args.delete_origin:
+            output = subprocess.check_output([
+                "rm",
+                full_root[count][0:-4]+'.ass'
+            ])
 
     if os.path.exists(str(l_root[count]+'/'+i)):
-        if frame_count(full_root[count]) != frame_count(l_root[count]+'/'+i):
+        output_file_frames = frame_count(l_root[count]+'/'+i)
+        input_file_frames = frame_count(full_root[count])
+        if input_file_frames != output_file_frames:
             print ("Frames is not correct for "+i)
-            print ("Input file frames:" + frame_count(full_root[count]))
-            print ("Output file frames:"+ frame_count(l_root[count]+'/'+i))
+            print ("Input file frames:" + input_file_frames)
+            print ("Output file frames:"+ output_file_frames)
             output = subprocess.check_output([
                 "rm",
                 "-v",
@@ -138,8 +140,8 @@ for i in l_fix:
             print ("Unconverted file deleted " + i)
         else: 
             print ("Video already converted " + i)
-            print ("Input file frames:" + frame_count(full_root[count]))
-            print ("Output file frames:"+ frame_count(l_root[count]+'/'+i))
+            print ("Input file frames:" + input_file_frames)
+            print ("Output file frames:"+ output_file_frames)
 
     if not (os.path.exists(str(l_root[count]+'/'+i))):
         process = "ffmpeg -i '" + full_root[count] + "' -c:v libx265 -x265-params crf=25 -c:a copy '" + str(l_root[count]+'/'+i) + "'"
@@ -161,9 +163,9 @@ for i in l_fix:
                     print(out)
             else:
                 out_r = 0
-                chatter = p.stderr.read(24)
+                chatter = p.stderr.read(64)
                 while chatter.rstrip() != '':
-                    chatter = p.stderr.read(24)
+                    chatter = p.stderr.read(64)
 #                    print(chatter)
                     if chatter.find('frame=')!=-1 & chatter.find('fps=')!=-1:
                         out = chatter[chatter.find('frame=')+6:chatter.find('fps=')]
