@@ -47,7 +47,7 @@ def cutter(item_c):
 #        print item_c
         number = ''
     if item_c == item_verified:
-        item_c = item_c[0:item_c.find('.')] + " HEVC" + item_c[-4:len(item_c)]
+        item_c = item_c[0:item_c.rfind('.')] + " HEVC" + item_c[-4:len(item_c)]
     print item_c
     l_fix.append(item_c)
 
