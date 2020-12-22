@@ -48,6 +48,8 @@ def cutter(item_c):
         number = ''
     if item_c == item_verified:
         item_c = item_c[0:item_c.rfind('.')] + " HEVC" + item_c[-4:len(item_c)]
+    if item_c[-4:len(item_c)] != '.mkv':
+        item_c = item_c[0:item_c.rfind('.')] + '.mkv'
     print item_c
     l_fix.append(item_c)
 
@@ -172,6 +174,7 @@ for i in l_fix:
 #                       print ('\'' + out + '\'')
                         out = out.replace(' ', '')
                         if out != '':
+                            print(out)
                             if int(out_r) <= int(out):
                                 out_r = out
                                 n = float(out_r)/int(f_count)
