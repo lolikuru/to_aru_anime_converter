@@ -2,14 +2,19 @@
 import sys, subprocess, json, os
 import argparse, time
 
+def original_delete(delete_root):
+    print 'DANGER, ORIGINALS DELETING'
+    output = subprocess.check_output([
+        "rm",
+        delete_root
+        ])
+
 def frame_count(input_root):
-    cmd ="ffmpeg -i \'" + input_root + "\' -vcodec copy -acodec copy -f null /dev/null 2>&1 | grep -Eo 'frame= *[0-9]+ * | tail -1'"
+    cmd ="ffmpeg -i \"" + input_root + "\" -vcodec copy -acodec copy -f null /dev/null 2>&1 | grep -Eo 'frame= *[0-9]+ * | tail -1'"
     frame_count = subprocess.Popen(
             cmd,
             stdout=subprocess.PIPE,
-            stderr=None, shell=True)
-    
-#    print fframe_count.communicate()[0]
+            stderr=None, shell=True) 
     out = frame_count.communicate()[0]
     out = out.split('\n')[-2]
     out = out.replace(' ', '')
@@ -109,22 +114,26 @@ for root, dirs, files in os.walk(dir_path):
 count = 0
 for i in l_fix:
     print i
-    print(full_root[count][0:-4] + '.ass ' + str(os.path.exists(full_root[count][0:-4] + '.ass')))
-    print(l_root[count]+'/'+i[0:-4]+'.ass ' + str(os.path.exists(l_root[count]+'/'+i[0:-4]+'.ass')))
-    if os.path.exists(full_root[count][0:-4] + '.ass'):
-        if not os.path.exists(l_root[count]+'/'+i[0:-4]+'.ass'): 
-            print 'cp ' + full_root[count][0:-4] + '.ass ' + l_root[count]+'/'+i[0:-4]+'.ass'
-            if not args.only_check:
+    sub_postfix = ['.ass', '.srt']
+
+    for name in sub_postfix:
+#        print(full_root[count][0:-4] + '.ass ' + str(os.path.exists(full_root[count][0:-4] + '.ass')))
+#        print(l_root[count]+'/'+i[0:-4]+'.ass ' + str(os.path.exists(l_root[count]+'/'+i[0:-4]+'.ass')))
+        if os.path.exists(full_root[count][0:-4] + name):
+            if not os.path.exists(l_root[count]+'/'+i[0:-4] + name): 
+                print 'cp ' + full_root[count][0:-4] + name + ' ' + l_root[count]+'/'+i[0:-4] + name
+                if not args.only_check:
+                    output = subprocess.check_output([
+                        "cp",
+                        full_root[count][0:-4] + name,
+                        l_root[count]+'/'+i[0:-4] + name
+                    ])
+
+            if args.delete_origin:
                 output = subprocess.check_output([
-                    "cp",
-                    full_root[count][0:-4]+'.ass',
-                    l_root[count]+'/'+i[0:-4]+'.ass'
+                    "rm",
+                    full_root[count][0:-4] + name
                 ])
-        if args.delete_origin:
-            output = subprocess.check_output([
-                "rm",
-                full_root[count][0:-4]+'.ass'
-            ])
 
     if os.path.exists(str(l_root[count]+'/'+i)):
         output_file_frames = frame_count(l_root[count]+'/'+i)
@@ -151,42 +160,62 @@ for i in l_fix:
         if not args.only_check:
             p = subprocess.Popen([
                 "ffmpeg",
+                "-loglevel", "warning",
+                "-hide_banner", "-stats",
                 "-i", full_root[count],
                 "-c:v", "libx265",
-                "-x265-params", "crf=25",
-                "-codec:a", "aac", 
+                "-x265-params", "crf=26",
+                "-codec:a", "aac",
+                "-map", "0",
                 str(l_root[count]+'/'+i)],
                 stderr=subprocess.PIPE)
+            drop = ''
+            conv = ''
+            full_frame = 0
             if args.verbose:
                 chatter = p.stderr.read(1024)
                 while chatter.rstrip() != '':
                     out = chatter.rstrip()
                     chatter = p.stderr.read(1024)
-                    print(out)
+                    out = out.split('\n')
+                    for x in out:
+                        print x
+                        if chatter.find('frame='):
+                            if chatter.find('drop=')!=-1 & chatter.find('speed=')!=-1:
+                                drop = chatter[chatter.find('drop=')+5:chatter.find('speed=')]
+                                drop = drop.replace(' ', '')
+                            if chatter.find('frame=')!=-1 & chatter.find('fps=')!=-1:
+                                conv = chatter[chatter.find('frame=')+6:chatter.find('fps=')]
+                                conv = conv.replace(' ', '') 
+                            if drop.isdigit() and conv.isdigit():
+                                full_frame = int(drop)+int(conv)
+                                print(f_count + " =?= " + str(full_frame))
+                    if args.delete_origin and full_frame == f_count:
+                        original_delete(full_root[count])
             else:
                 out_r = 0
                 chatter = p.stderr.read(64)
                 while chatter.rstrip() != '':
                     chatter = p.stderr.read(64)
-#                    print(chatter)
                     if chatter.find('frame=')!=-1 & chatter.find('fps=')!=-1:
                         out = chatter[chatter.find('frame=')+6:chatter.find('fps=')]
-#                       print ('\'' + out + '\'')
                         out = out.replace(' ', '')
-                        if out != '':
-                            print(out)
-                            if int(out_r) <= int(out):
-                                out_r = out
+                        if chatter.find('drop=')!=-1 & chatter.find('speed=')!=-1:
+                            drop = chatter[chatter.find('drop=')+5:chatter.find('speed=')]
+                            drop = drop.replace(' ', '')
+                        if drop.isdigit() and conv.isdigit():
+                            full_frame = int(drop)+int(conv)
+                            if int(out_r) <= full_frame:
+                                out_r = full_frame
                                 n = float(out_r)/int(f_count)
-                                print("Output Name:" + i + " {:.2%}".format(n) + " Frames compiled:" + out)
-    if (os.path.exists(str(l_root[count]+'/'+i))):
+                                print("Output Name:" + i + " {:.2%}".format(n) + " Frames compiled:" + str(full_count))
+                if args.delete_origin:
+                    original_delete(full_root[count])
+
+    if os.path.exists(str(l_root[count]+'/'+i)) and os.path.exists(str(full_root[count])):
         if frame_count(full_root[count]) == frame_count(l_root[count]+'/'+i):
             if args.delete_origin:
-                print 'DANGER, ORIGINALS DELETING'
-                output = subprocess.check_output([
-                   "rm",
-                    full_root[count]
-                ])
+                original_delete(full_root[count])
     count +=1
 
 
