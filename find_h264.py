@@ -2,6 +2,10 @@
 import sys, subprocess, json, os
 import argparse, time
 
+
+extra_symbol_list = ["`"]
+
+
 def original_delete(delete_root):
     print 'DANGER, ORIGINALS DELETING'
     output = subprocess.check_output([
@@ -10,6 +14,8 @@ def original_delete(delete_root):
         ])
 
 def frame_count(input_root):
+    for s in extra_symbol_list:
+        input_root = input_root.replace( s, "\\" + s)
     cmd ="ffmpeg -i \"" + input_root + "\" -vcodec copy -acodec copy -f null /dev/null 2>&1 | grep -Eo 'frame= *[0-9]+ * | tail -1'"
     frame_count = subprocess.Popen(
             cmd,
@@ -20,9 +26,9 @@ def frame_count(input_root):
     out = out.replace(' ', '')
     out = out[6:]
     time.sleep(2)
-    #print("\'"+out+"\'")
+#    print("\'"+out+"\'")
 #    frame_count = frame_count[frame_count.find('Frame count'):frame_count.find('\n', frame_count.find('Frame count'))]
-#    frame_count = frame_count[frame_count.find(':')+2:]  
+#    frame_count = frame_count[frame_count.find(':')+2:] 
     return out
 
 def cutter(item_c):
