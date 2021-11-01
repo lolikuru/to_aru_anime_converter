@@ -194,9 +194,9 @@ for i in l_fix:
                                 conv = chatter[chatter.find('frame=')+6:chatter.find('fps=')]
                                 conv = conv.replace(' ', '') 
                             if drop.isdigit() and conv.isdigit():
-                                full_frame = int(drop)+int(conv)
-                                print(f_count + " =?= " + str(full_frame))
-                    if args.delete_origin and full_frame == f_count:
+                                full_frame = int(drop)+int(conv) + 150
+                                print(f_count + " =?< " + str(full_frame))
+                    if args.delete_origin and full_frame >= f_count:
                         original_delete(full_root[count])
             else:
                 out_r = 0
@@ -219,6 +219,8 @@ for i in l_fix:
                     original_delete(full_root[count])
 
     if os.path.exists(str(l_root[count]+'/'+i)) and os.path.exists(str(full_root[count])):
+        print("Frame count original:" + frame_count(full_root[count]))
+        print("Frame count HEVC:" + frame_count(l_root[count]+'/'+i))
         if frame_count(full_root[count]) == frame_count(l_root[count]+'/'+i):
             if args.delete_origin:
                 original_delete(full_root[count])
