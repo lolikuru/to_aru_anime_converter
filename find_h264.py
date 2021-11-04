@@ -156,7 +156,7 @@ for i in l_fix:
         output_file_frames = frame_count(l_root[count]+'/'+i)
         input_file_frames = frame_count(full_root[count])
         if input_file_frames != output_file_frames:
-            print (float((int(input_file_frames) - int(output_file_frames))/(int(input_file_frames)/100)))
+            print ((float(input_file_frames) - int(output_file_frames))/int(input_file_frames)*100)
             print ("Frames is not correct for "+i)
             print ("Input file frames:" + input_file_frames)
             print ("Output file frames:"+ output_file_frames)
@@ -237,10 +237,11 @@ for i in l_fix:
         output_final_count = int(frame_count(l_root[count]+'/'+i))
         print("Frame count original:" + str(input_final_count))
         print("Frame count HEVC:" + str(output_final_count))
-        percentage = float((input_final_count - output_final_count)/input_final_count/100)
-        print(float((input_final_count - output_final_count)/input_final_count/100))
-        if (input_final_count - output_final_count)/input_final_count/100 < 2:
+        percentage = (float(input_final_count) - output_final_count)/input_final_count*100
+        print(str(percentage) + "% not identity")
+        if percentage < 2:
             if args.delete_origin:
+                print("< 2%, it's correct")
                 original_delete(full_root[count])
     count +=1
 

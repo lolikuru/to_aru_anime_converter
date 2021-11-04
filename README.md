@@ -24,3 +24,8 @@ output dir:~/workspace/Convert_to_h265/Download_mount/<dirVideofound>/
 output file:
 - 'Psycho-Pass Sinners of the System - 01.mp4'
 - 'Psycho-Pass Sinners of the System - 01.ass'
+
+
+04.11.2021
+-Add procentage check for delete original file
+-Delete single delete file after convert
