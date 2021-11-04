@@ -5,6 +5,9 @@ import argparse, time
 
 extra_symbol_list = ["`"]
 
+def du(path):
+    """disk usage in human readable format (e.g. '2,1GB')"""
+    return subprocess.check_output(['du','-sh', path]).split()[0].decode('utf-8')
 
 def original_delete(delete_root):
     print 'DANGER, ORIGINALS DELETING'
@@ -14,14 +17,21 @@ def original_delete(delete_root):
         ])
 
 def frame_count(input_root):
+#    print(input_root)
     for s in extra_symbol_list:
         input_root = input_root.replace( s, "\\" + s)
     cmd ="ffmpeg -i \"" + input_root + "\" -vcodec copy -acodec copy -f null /dev/null 2>&1 | grep -Eo 'frame= *[0-9]+ * | tail -1'"
     frame_count = subprocess.Popen(
             cmd,
             stdout=subprocess.PIPE,
-            stderr=None, shell=True) 
-    out = frame_count.communicate()[0]
+            stderr=None, shell=True)
+    out = frame_count.communicate()
+#    print(out)
+    if (out[-1] is None):
+        out = out[-2]
+    else: 
+        out = out[-1]
+#    print(out)
     out = out.split('\n')[-2]
     out = out.replace(' ', '')
     out = out[6:]
@@ -100,9 +110,10 @@ full_root = []
 count = 0
 
 print "Move find dir:"+dir_path
+print(du(dir_path))
 for root, dirs, files in os.walk(dir_path): 
     for file in files:   
-        if file.endswith('.mkv') | file.endswith('.mp4') | file.endswith('.avi'): 
+        if file.endswith('.mkv') | file.endswith('.mp4') | file.endswith('.avi') | file.endswith('.MOV') | file.endswith('.mov'): 
             if str(file).find('HEVC') == -1:
                 check = (str(root+'/'+str(file)))
                 output = subprocess.check_output([
@@ -145,6 +156,7 @@ for i in l_fix:
         output_file_frames = frame_count(l_root[count]+'/'+i)
         input_file_frames = frame_count(full_root[count])
         if input_file_frames != output_file_frames:
+            print (float((int(input_file_frames) - int(output_file_frames))/(int(input_file_frames)/100)))
             print ("Frames is not correct for "+i)
             print ("Input file frames:" + input_file_frames)
             print ("Output file frames:"+ output_file_frames)
@@ -161,9 +173,10 @@ for i in l_fix:
             print ("Output file frames:"+ output_file_frames)
 
     if not (os.path.exists(str(l_root[count]+'/'+i))):
-        process = "ffmpeg -i '" + full_root[count] + "' -c:v libx265 -x265-params crf=25 -c:a copy '" + str(l_root[count]+'/'+i) + "'"
+        #process = "ffmpeg -i '" + full_root[count] + "' -c:v libx265 -x265-params crf=25 -c:a copy '" + str(l_root[count]+'/'+i) + " -y'"
         f_count = frame_count(full_root[count])
         if not args.only_check:
+            #print("ffmpeg -loglevel warning -hide_banner -stats -i '\"+ full_root[count] + "\' -c:v libx265 -x265-params crf=26 -codec:a aac -map 0 \'" + str(l_root[count]+'/'+i+"\'"))
             p = subprocess.Popen([
                 "ffmpeg",
                 "-loglevel", "warning",
@@ -172,7 +185,8 @@ for i in l_fix:
                 "-c:v", "libx265",
                 "-x265-params", "crf=26",
                 "-codec:a", "aac",
-                "-map", "0",
+#               "-map", "0",
+                "-y",
                 str(l_root[count]+'/'+i)],
                 stderr=subprocess.PIPE)
             drop = ''
@@ -193,11 +207,11 @@ for i in l_fix:
                             if chatter.find('frame=')!=-1 & chatter.find('fps=')!=-1:
                                 conv = chatter[chatter.find('frame=')+6:chatter.find('fps=')]
                                 conv = conv.replace(' ', '') 
-                            if drop.isdigit() and conv.isdigit():
-                                full_frame = int(drop)+int(conv) + 150
-                                print(f_count + " =?< " + str(full_frame))
-                    if args.delete_origin and full_frame >= f_count:
-                        original_delete(full_root[count])
+#                           if drop.isdigit() and conv.isdigit():
+#                               full_frame = int(drop)+int(conv)
+#                               print(f_count + " =?< " + str(full_frame))
+#                   if args.delete_origin and full_frame >= f_count:
+#                       original_delete(full_root[count])
             else:
                 out_r = 0
                 chatter = p.stderr.read(64)
@@ -215,15 +229,22 @@ for i in l_fix:
                                 out_r = full_frame
                                 n = float(out_r)/int(f_count)
                                 print("Output Name:" + i + " {:.2%}".format(n) + " Frames compiled:" + str(full_count))
-                if args.delete_origin:
-                    original_delete(full_root[count])
+#                if args.delete_origin:
+#                    original_delete(full_root[count])
 
     if os.path.exists(str(l_root[count]+'/'+i)) and os.path.exists(str(full_root[count])):
-        print("Frame count original:" + frame_count(full_root[count]))
-        print("Frame count HEVC:" + frame_count(l_root[count]+'/'+i))
-        if frame_count(full_root[count]) == frame_count(l_root[count]+'/'+i):
+        input_final_count = int(frame_count(full_root[count]))
+        output_final_count = int(frame_count(l_root[count]+'/'+i))
+        print("Frame count original:" + str(input_final_count))
+        print("Frame count HEVC:" + str(output_final_count))
+        percentage = float((input_final_count - output_final_count)/input_final_count/100)
+        print(float((input_final_count - output_final_count)/input_final_count/100))
+        if (input_final_count - output_final_count)/input_final_count/100 < 2:
             if args.delete_origin:
                 original_delete(full_root[count])
     count +=1
+
+print(du(dir_path))
+
 
 
