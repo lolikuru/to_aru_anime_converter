@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import sys, subprocess, json, os
+import subprocess, os
 import argparse, time
 
 
@@ -10,7 +10,7 @@ def du(path):
     return subprocess.check_output(['du','-sh', path]).split()[0].decode('utf-8')
 
 def original_delete(delete_root):
-    print 'DANGER, ORIGINALS DELETING'
+    print('DANGER, ORIGINALS DELETING')
     output = subprocess.check_output([
         "rm",
         delete_root
@@ -43,7 +43,7 @@ def frame_count(input_root):
 
 def cutter(item_c):
     item_verified = item_c
-    print item_c
+    print(item_c)
     while item_c.find('[') != -1:
         start = item_c.find('[')
         end = item_c.find(']')
@@ -71,7 +71,7 @@ def cutter(item_c):
         item_c = item_c[0:item_c.rfind('.')] + " HEVC" + item_c[-4:len(item_c)]
     if item_c[-4:len(item_c)] != '.mkv':
         item_c = item_c[0:item_c.rfind('.')] + '.mkv'
-    print item_c
+    print(item_c)
     l_fix.append(item_c)
 
 
@@ -91,12 +91,12 @@ else: f_dir = ''
 
 #print(f_dir)
 if args.delete_origin:
-    print 'Original files will be deleted after converting'
+    print('Original files will be deleted after converting')
 else: 
-    print 'Converting w/o origins deleting'
+    print('Converting w/o origins deleting')
 
 if args.only_check:
-    print 'Only check'
+    print('Only check')
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 dir_path = dir_path[:dir_path.find('/to_aru_anime_converter')]
@@ -109,7 +109,7 @@ full_root = []
 
 count = 0
 
-print "Move find dir:"+dir_path
+print("Move find dir:"+dir_path)
 print(du(dir_path))
 for root, dirs, files in os.walk(dir_path): 
     for file in files:   
@@ -130,7 +130,7 @@ for root, dirs, files in os.walk(dir_path):
                     cutter(str(file))
 count = 0
 for i in l_fix:
-    print i
+    print(i)
     sub_postfix = ['.ass', '.srt']
 
     for name in sub_postfix:
@@ -138,7 +138,7 @@ for i in l_fix:
 #        print(l_root[count]+'/'+i[0:-4]+'.ass ' + str(os.path.exists(l_root[count]+'/'+i[0:-4]+'.ass')))
         if os.path.exists(full_root[count][0:-4] + name):
             if not os.path.exists(l_root[count]+'/'+i[0:-4] + name): 
-                print 'cp ' + full_root[count][0:-4] + name + ' ' + l_root[count]+'/'+i[0:-4] + name
+                print('cp ' + full_root[count][0:-4] + name + ' ' + l_root[count]+'/'+i[0:-4] + name)
                 if not args.only_check:
                     output = subprocess.check_output([
                         "cp",
@@ -199,7 +199,7 @@ for i in l_fix:
                     chatter = p.stderr.read(1024)
                     out = out.split('\n')
                     for x in out:
-                        print x
+                        print (x)
                         if chatter.find('frame='):
                             if chatter.find('drop=')!=-1 & chatter.find('speed=')!=-1:
                                 drop = chatter[chatter.find('drop=')+5:chatter.find('speed=')]
@@ -228,7 +228,7 @@ for i in l_fix:
                             if int(out_r) <= full_frame:
                                 out_r = full_frame
                                 n = float(out_r)/int(f_count)
-                                print("Output Name:" + i + " {:.2%}".format(n) + " Frames compiled:" + str(full_count))
+                                print("Output Name:" + i + " {:.2%}".format(n) + " Frames compiled:" + str(out_r))
 #                if args.delete_origin:
 #                    original_delete(full_root[count])
 
