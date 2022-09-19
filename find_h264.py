@@ -4,6 +4,7 @@ import argparse, time
 
 
 extra_symbol_list = ["`"]
+format_list = ['.mkv', '.mp4', '.avi', '.MOV', '.mov']
 
 def du(path):
     """disk usage in human readable format (e.g. '2,1GB')"""
@@ -112,8 +113,8 @@ count = 0
 print("Move find dir:"+dir_path)
 print(du(dir_path))
 for root, dirs, files in os.walk(dir_path): 
-    for file in files:   
-        if file.endswith('.mkv') | file.endswith('.mp4') | file.endswith('.avi') | file.endswith('.MOV') | file.endswith('.mov'): 
+    for file in files:
+        if file.split('.')[-1] in format_list:
             if str(file).find('HEVC') == -1:
                 check = (str(root+'/'+str(file)))
                 output = subprocess.check_output([
