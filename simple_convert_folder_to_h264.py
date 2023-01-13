@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 #!/usr/bin/python
 import subprocess, os
 import argparse, time
@@ -44,3 +45,13 @@ for root, dirs, files in os.walk(dir_path):
 #        .output('output.mp4')
 #        .run()
 # )
+=======
+import ffmpeg
+(
+    ffmpeg
+    .input('input.mp4')
+    .hflip()
+    .output('output.mp4')
+    .run()
+)
+>>>>>>> 88d6bb79b76eebfe97a715f8b9331be8eae9c15e
