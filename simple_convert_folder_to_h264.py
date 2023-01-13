@@ -28,14 +28,47 @@ print(du(dir_path))
 
 for root, dirs, files in os.walk(dir_path):
     for f_file in files:
-        print f_file
-        (
-            ffmpeg
-            .input(root + '/' + f_file)
-            .filter('fps', fps=30, round='up')
-            .output(root + '/' + f_file[:f_file.find('.')] + '_h264.mp4', format='h264')
-            .run()
-        )
+        print f_file.find('_h264')
+        if f_file.find('_h264') != 0:
+            print f_file
+            in1 = ffmpeg.input(root + '/' + f_file)
+            a1 = in1.audio
+
+            (
+                ffmpeg
+                .input(root + '/' + f_file)
+                # .filter('fps', fps=30, round='up')
+                .filter('vidstabdetect', shakiness=3, accuracy=15)
+                .output('-', format='null')
+                .run()
+            )
+            (
+                ffmpeg
+                .input(root + '/' + f_file)
+                .filter('vidstabtransform', smoothing=3, zoom=-3)
+                .filter('fps', fps=30, round='up')
+                .output(a1, 'step1.mp4')
+                .overwrite_output()
+                .run()
+            )
+            (
+                ffmpeg
+                .input('step1.mp4')
+                .filter('vidstabdetect', shakiness=4, accuracy=15)
+                .filter('fps', fps=30, round='up')
+                .output('-', format='null')
+                .overwrite_output()
+                .run()
+            )
+            (
+                ffmpeg
+                .input('step1.mp4')
+                .filter('vidstabtransform', smoothing=12, zoom=0)
+                .filter('fps', fps=30, round='up')
+                .output(a1, root + '/' + f_file[:f_file.find('.')] + '_h264.mp4')
+                .overwrite_output()
+                .run()
+            )
 
 # (
 #    ffmpeg
