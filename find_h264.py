@@ -113,11 +113,11 @@ count = 0
 print("Move find dir:"+dir_path)
 print(du(dir_path))
 for root, dirs, files in os.walk(dir_path): 
-    for file in files:
-        print(file.split('.')[-1])
-        if file.split('.')[-1] in format_list:
-            if str(file).find('HEVC') == -1:
-                check = (str(root+'/'+str(file)))
+    for f_file in files:
+        print(f_file.split('.')[-1])
+        if f_file.split('.')[-1] in format_list:
+            if str(f_file).find('HEVC') == -1:
+                check = (str(root +'/' + str(f_file)))
                 output = subprocess.check_output([
                     "ffprobe",
                     "-v", "error",
@@ -127,9 +127,9 @@ for root, dirs, files in os.walk(dir_path):
                     check
                 ])[:-1]
                 if  output in ['h264', 'mpeg4']:
-                    full_root.append(str(root+'/'+str(file)))
+                    full_root.append(str(root +'/' + str(f_file)))
                     l_root.append(str(root))
-                    cutter(str(file))
+                    cutter(str(f_file))
 count = 0
 for i in l_fix:
     print(i)
