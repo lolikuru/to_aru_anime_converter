@@ -33,7 +33,8 @@ for root, dirs, files in os.walk(dir_path):
             if f_file.split('.')[-1] in format_list:
                 print f_file
                 in1 = ffmpeg.input(root + '/' + f_file)
-                a1 = in1.audio
+                a1 = in1['a:0?']
+                print a1
 
                 (
                     ffmpeg
