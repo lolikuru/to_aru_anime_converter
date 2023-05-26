@@ -4,7 +4,7 @@ import argparse, time
 
 
 extra_symbol_list = ["`"]
-format_list = ['mkv', 'mp4', 'avi', 'MOV', 'mov']
+format_list = ['mkv', 'mp4', 'avi', 'MOV', 'mov', 'MPG']
 
 def du(path):
     """disk usage in human readable format (e.g. '2,1GB')"""
