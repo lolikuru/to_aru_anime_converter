@@ -4,7 +4,7 @@ import argparse, time
 
 
 extra_symbol_list = ["`"]
-format_list = ['mkv', 'mp4', 'avi', 'MOV', 'mov', 'MPG']
+format_list = ['mkv', 'mp4', 'avi', 'MOV', 'mov', 'MPG', 'wmv', 'flv']
 
 def du(path):
     """disk usage in human readable format (e.g. '2,1GB')"""
@@ -186,8 +186,11 @@ for i in l_fix:
                 "-i", full_root[count],
                 "-c:v", "libx265",
                 "-x265-params", "crf=26",
-                "-codec:a", "aac",
-#               "-map", "0",
+                "-codec:a", "copy",
+                "-codec:s", "copy",
+                "-map", "0:v",
+                "-map", "0:a",
+#                "-map", "0:s",
                 "-y",
                 str(l_root[count]+'/'+i)],
                 stderr=subprocess.PIPE)
