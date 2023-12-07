@@ -42,6 +42,21 @@ def frame_count(input_root):
 #    frame_count = frame_count[frame_count.find(':')+2:] 
     return out
 
+def check_included_subs(full_path):
+    output = subprocess.check_output([
+        "ffprobe",
+        "-v", "error",
+        "-select_streams", "s:0",
+        "-show_entries", "stream=codec_name",
+        "-of", "default=noprint_wrappers=1:nokey=1",
+        full_path
+        ])[:-1]
+    if output in ['ass', 'srt']:
+        print("Subs found in file " + full_path)
+        return True
+    else: 
+        return False
+
 def cutter(item_c):
     item_verified = item_c
     print(item_c)
@@ -114,7 +129,7 @@ print("Move find dir:"+dir_path)
 print(du(dir_path))
 for root, dirs, files in os.walk(dir_path): 
     for f_file in files:
-        print(f_file.split('.')[-1])
+        #print(f_file.split('.')[-1])
         if f_file.split('.')[-1] in format_list:
             if str(f_file).find('HEVC') == -1:
                 check = (str(root +'/' + str(f_file)))
@@ -131,28 +146,61 @@ for root, dirs, files in os.walk(dir_path):
                     l_root.append(str(root))
                     cutter(str(f_file))
 count = 0
-for i in l_fix:
-    print(i)
-    sub_postfix = ['.ass', '.srt']
 
-    for name in sub_postfix:
+sub_postfix = ['.ass', '.srt']
+sub_langs = [ 'rus', 'eng']
+include_sub_dir = [ '', 'subtitles', 'Subtitles' ]
+
+for index,prop_sub_dir in enumerate(include_sub_dir):
+    if prop_sub_dir != '':
+        include_sub_dir[index] = include_sub_dir[index] + '/'
+        print(include_sub_dir[index])
+
+for i in l_fix:
+    print("New name is " + i)
+    for prop_sub_dir in include_sub_dir: 
+        for name in sub_postfix:
 #        print(full_root[count][0:-4] + '.ass ' + str(os.path.exists(full_root[count][0:-4] + '.ass')))
 #        print(l_root[count]+'/'+i[0:-4]+'.ass ' + str(os.path.exists(l_root[count]+'/'+i[0:-4]+'.ass')))
-        if os.path.exists(full_root[count][0:-4] + name):
-            if not os.path.exists(l_root[count]+'/'+i[0:-4] + name): 
-                print('cp ' + full_root[count][0:-4] + name + ' ' + l_root[count]+'/'+i[0:-4] + name)
-                if not args.only_check:
+            if os.path.exists(full_root[count][0:-4] + name):
+                if not os.path.exists(l_root[count]+'/'+i[0:-4] + name): 
+                    print('cp ' + full_root[count][0:-4] + name + ' ' + l_root[count]+'/'+i[0:-4] + name)
+                    if not args.only_check:
+                        output = subprocess.check_output([
+                            "cp",
+                            full_root[count][0:-4] + name,
+                            l_root[count]+'/'+i[0:-4] + name
+                        ])
+
+                if args.delete_origin:
                     output = subprocess.check_output([
-                        "cp",
-                        full_root[count][0:-4] + name,
-                        l_root[count]+'/'+i[0:-4] + name
+                        "rm",
+                        full_root[count][0:-4] + name
                     ])
 
-            if args.delete_origin:
-                output = subprocess.check_output([
-                    "rm",
-                    full_root[count][0:-4] + name
-                ])
+            for lang in sub_langs:
+                proposed_sub_path = l_root[count] + '/' + prop_sub_dir + full_root[count][full_root[count].rfind('/')+1:-4] + "." + lang + name
+                new_sub_path = l_root[count]+'/'+ prop_sub_dir + i[0:-4] + '.' + lang + name
+
+               # print('Old sub path ' + proposed_sub_path)
+               # print('New sub path ' + new_sub_path)
+
+                if os.path.exists(proposed_sub_path):
+                    if not os.path.exists(l_root[count]+'/'+ prop_sub_dir + i[0:-4] + '.' + lang + name):
+                        print('cp ' + proposed_sub_path + ' ' + new_sub_path)
+                        if not args.only_check:
+                            output = subprocess.check_output([
+                                "cp",
+                                proposed_sub_path,
+                                new_sub_path
+                            ])
+
+                    if args.delete_origin:
+                        output = subprocess.check_output([
+                            "rm",
+                            proposed_sub_path
+                        ])
+
 
     if os.path.exists(str(l_root[count]+'/'+i)):
         output_file_frames = frame_count(l_root[count]+'/'+i)
@@ -178,6 +226,10 @@ for i in l_fix:
         #process = "ffmpeg -i '" + full_root[count] + "' -c:v libx265 -x265-params crf=25 -c:a copy '" + str(l_root[count]+'/'+i) + " -y'"
         f_count = frame_count(full_root[count])
         if not args.only_check:
+            copy_sub = []
+            if check_included_subs(full_root[count]):
+                copy_sub = ["-map", "0:s"]
+                print(copy_sub)
             #print("ffmpeg -loglevel warning -hide_banner -stats -i '\"+ full_root[count] + "\' -c:v libx265 -x265-params crf=26 -codec:a aac -map 0 \'" + str(l_root[count]+'/'+i+"\'"))
             p = subprocess.Popen([
                 "ffmpeg",
@@ -189,10 +241,9 @@ for i in l_fix:
                 "-codec:a", "copy",
                 "-codec:s", "copy",
                 "-map", "0:v",
-                "-map", "0:a",
-#                "-map", "0:s",
-                "-y",
-                str(l_root[count]+'/'+i)],
+                "-map", "0:a" ]
+                + copy_sub + 
+                [ "-y", str(l_root[count]+'/'+i) ],
                 stderr=subprocess.PIPE)
             drop = ''
             conv = ''
