@@ -6,6 +6,10 @@ import argparse, time
 extra_symbol_list = ["`"]
 format_list = ['mkv', 'mp4', 'avi', 'MOV', 'mov', 'MPG', 'wmv', 'flv']
 
+sub_postfix = ['.ass', '.srt']
+sub_langs = [ 'rus', 'eng']
+include_sub_dir = [ '', 'subtitles', 'Subtitles' ]
+
 def du(path):
     """disk usage in human readable format (e.g. '2,1GB')"""
     return subprocess.check_output(['du','-sh', path]).split()[0].decode('utf-8')
@@ -129,6 +133,9 @@ print("Move find dir:"+dir_path)
 print(du(dir_path))
 for root, dirs, files in os.walk(dir_path): 
     for f_file in files:
+        if f_file[0:f_file.find('.')] != f_file.split('.')[-2]:
+            if f_file.split('.')[-2] not in sub_lang:
+                sub_lang.append(f_file.split('.')[-2])
         #print(f_file.split('.')[-1])
         if f_file.split('.')[-1] in format_list:
             if str(f_file).find('HEVC') == -1:
@@ -146,10 +153,6 @@ for root, dirs, files in os.walk(dir_path):
                     l_root.append(str(root))
                     cutter(str(f_file))
 count = 0
-
-sub_postfix = ['.ass', '.srt']
-sub_langs = [ 'rus', 'eng']
-include_sub_dir = [ '', 'subtitles', 'Subtitles' ]
 
 for index,prop_sub_dir in enumerate(include_sub_dir):
     if prop_sub_dir != '':
@@ -177,7 +180,7 @@ for i in l_fix:
                         "rm",
                         full_root[count][0:-4] + name
                     ])
-
+            
             for lang in sub_langs:
                 proposed_sub_path = l_root[count] + '/' + prop_sub_dir + full_root[count][full_root[count].rfind('/')+1:-4] + "." + lang + name
                 new_sub_path = l_root[count]+'/'+ prop_sub_dir + i[0:-4] + '.' + lang + name
