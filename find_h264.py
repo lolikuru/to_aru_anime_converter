@@ -133,9 +133,10 @@ print("Move find dir:"+dir_path)
 print(du(dir_path))
 for root, dirs, files in os.walk(dir_path): 
     for f_file in files:
-        if f_file[0:f_file.find('.')] != f_file.split('.')[-2]:
-            if f_file.split('.')[-2] not in sub_lang:
-                sub_lang.append(f_file.split('.')[-2])
+        if f_file[f_file.rfind('.'):] in sub_postfix:
+            if f_file[0:f_file.find('.')] != f_file.split('.')[-2]:
+                if f_file.split('.')[-2] not in sub_langs:
+                   sub_langs.append(f_file.split('.')[-2])
         #print(f_file.split('.')[-1])
         if f_file.split('.')[-1] in format_list:
             if str(f_file).find('HEVC') == -1:
