@@ -4,7 +4,10 @@ import argparse, time
 
 
 extra_symbol_list = ["`"]
-format_list = ['mkv', 'mp4', 'avi', 'MOV', 'mov', 'MPG', 'wmv', 'flv']
+format_list = ['mkv', 'mp4', 'avi', 'MOV', 'mov', 'MPG', 'wmv', 'flv', 'MP4']
+
+print('Formats for converting: ')
+print(' '.join(format_list))
 
 sub_postfix = ['.ass', '.srt']
 sub_langs = [ 'rus', 'eng']
