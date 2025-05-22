@@ -4,7 +4,7 @@ import argparse, time
 
 
 extra_symbol_list = ["`"]
-format_list = ['mkv', 'mp4', 'avi', 'MOV', 'mov', 'MPG', 'wmv', 'flv', 'MP4']
+format_list = ['3GP' , 'avi' ,'mkv', 'mp4', 'avi', 'MOV', 'mov', 'MPG', 'wmv', 'flv', 'MP4']
 
 print('Formats for converting: ')
 print(' '.join(format_list))
@@ -248,7 +248,7 @@ for i in l_fix:
                 "-codec:a", "copy",
                 "-codec:s", "copy",
                 "-map", "0:v",
-                "-map", "0:a" ]
+                "-map", "0:a?" ]
                 + copy_sub + 
                 [ "-y", str(l_root[count]+'/'+i) ],
                 stderr=subprocess.PIPE)
