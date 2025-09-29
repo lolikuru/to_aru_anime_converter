@@ -3,8 +3,8 @@ import subprocess, os
 import argparse, time
 
 
-def extra_symbol_list = ["`"]
-def format_list = ['3GP' , 'avi' ,'mkv', 'mp4', 'avi', 'MOV', 'mov', 'MPG', 'wmv', 'flv', 'MP4']
+extra_symbol_list = ["`"]
+format_list = ['3GP' , 'avi' ,'mkv', 'mp4', 'avi', 'MOV', 'mov', 'MPG', 'wmv', 'flv', 'MP4']
 
 print('Formats for converting: ')
 print(' '.join(format_list))
