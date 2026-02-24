@@ -1,6 +1,6 @@
 #!/usr/bin/python
 import subprocess, os
-import argparse, time
+import argparse, time, re
 
 
 extra_symbol_list = ["`"]
@@ -24,30 +24,32 @@ def original_delete(delete_root):
         delete_root
         ])
 
-def frame_count(input_root):
-#    print(input_root)
-    for s in extra_symbol_list:
-        input_root = input_root.replace( s, "\\" + s)
-    cmd ="ffmpeg -i \"" + input_root + "\" -vcodec copy -acodec copy -f null /dev/null 2>&1 | grep -Eo 'frame= *[0-9]+ * | tail -1'"
-    frame_count = subprocess.Popen(
+def get_video_time(input_file):
+    try:
+        for s in extra_symbol_list:
+            input_file = input_file.replace( s, "\\" + s)
+
+        cmd = 'ffmpeg -i "' + input_file + '" -f null /dev/null 2>&1 | grep -i "duration:"'
+        
+        time_count = subprocess.Popen(
             cmd,
             stdout=subprocess.PIPE,
-            stderr=None, shell=True)
-    out = frame_count.communicate()
-#    print(out)
-    if (out[-1] is None):
-        out = out[-2]
-    else: 
-        out = out[-1]
-#    print(out)
-    out = out.split('\n')[-2]
-    out = out.replace(' ', '')
-    out = out[6:]
-    time.sleep(2)
-#    print("\'"+out+"\'")
-#    frame_count = frame_count[frame_count.find('Frame count'):frame_count.find('\n', frame_count.find('Frame count'))]
-#    frame_count = frame_count[frame_count.find(':')+2:] 
-    return out
+            stderr=subprocess.PIPE, 
+            shell=True)
+
+        out = time_count.communicate()
+        out = out[-2].strip()
+
+        print(out)
+        match = re.search(r'(\d{2}:\d{2}:\d{2})\.\d+', out)
+        if match:
+            return match.group(1)
+
+        return None
+        
+    except Exception as e:
+        print "Error with grep time method: " + str(e)
+        return None
 
 def check_included_subs(full_path):
     output = subprocess.check_output([
@@ -210,13 +212,11 @@ for i in l_fix:
 
 
     if os.path.exists(str(l_root[count]+'/'+i)):
-        output_file_frames = frame_count(l_root[count]+'/'+i)
-        input_file_frames = frame_count(full_root[count])
-        if input_file_frames != output_file_frames:
-            print ((float(input_file_frames) - int(output_file_frames))/int(input_file_frames)*100)
-            print ("Frames is not correct for "+i)
-            print ("Input file frames:" + input_file_frames)
-            print ("Output file frames:"+ output_file_frames)
+        output_file_time = get_video_time(l_root[count]+'/'+i)
+        input_file_time = get_video_time(full_root[count])
+        if input_file_time != output_file_time:
+            print ("Input file time:" + input_file_time)
+            print ("Output file time:"+ output_file_time)
             output = subprocess.check_output([
                 "rm",
                 "-v",
@@ -226,12 +226,12 @@ for i in l_fix:
             print ("Unconverted file deleted " + i)
         else: 
             print ("Video already converted " + i)
-            print ("Input file frames:" + input_file_frames)
-            print ("Output file frames:"+ output_file_frames)
+            print ("Input file time:" + input_file_time)
+            print ("Output file time:"+ output_file_time)
 
     if not (os.path.exists(str(l_root[count]+'/'+i))):
         #process = "ffmpeg -i '" + full_root[count] + "' -c:v libx265 -x265-params crf=25 -c:a copy '" + str(l_root[count]+'/'+i) + " -y'"
-        f_count = frame_count(full_root[count])
+        f_count = get_video_time(full_root[count])
         if not args.only_check:
             copy_sub = []
             if check_included_subs(full_root[count]):
@@ -296,15 +296,13 @@ for i in l_fix:
 #                    original_delete(full_root[count])
 
     if os.path.exists(str(l_root[count]+'/'+i)) and os.path.exists(str(full_root[count])):
-        input_final_count = int(frame_count(full_root[count]))
-        output_final_count = int(frame_count(l_root[count]+'/'+i))
-        print("Frame count original:" + str(input_final_count))
-        print("Frame count HEVC:" + str(output_final_count))
-        percentage = (float(input_final_count) - output_final_count)/input_final_count*100
-        print(str(percentage) + "% not identity")
-        if percentage < 2:
+        input_final_time = get_video_time(full_root[count])
+        output_final_time = get_video_time(l_root[count]+'/'+i)
+        print("Video time original:" + input_final_time)
+        print("Video time HEVC:" + output_final_time)
+        if input_final_time == output_final_time:
             if args.delete_origin:
-                print("< 2%, it's correct")
+                print("video time is same")
                 original_delete(full_root[count])
     count +=1
 
